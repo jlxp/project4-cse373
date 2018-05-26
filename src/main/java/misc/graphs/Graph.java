@@ -1,11 +1,14 @@
 package misc.graphs;
 
 import datastructures.concrete.ArrayDisjointSet;
+import datastructures.concrete.ArrayHeap;
 import datastructures.concrete.ChainedHashSet;
 import datastructures.concrete.DoubleLinkedList;
 import datastructures.concrete.dictionaries.ChainedHashDictionary;
 import datastructures.interfaces.IDictionary;
+import datastructures.interfaces.IDisjointSet;
 import datastructures.interfaces.IList;
+import datastructures.interfaces.IPriorityQueue;
 import datastructures.interfaces.ISet;
 import misc.Searcher;
 import misc.exceptions.NoPathExistsException;
@@ -131,16 +134,38 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
      */
     public ISet<E> findMinimumSpanningTree() {
         ISet<E> resultSet = new ChainedHashSet<>();
-        IList<E> topEdges = Searcher.topKSort(this.edges.size(), this.edges);
-        ISet<V> visited = new ChainedHashSet<>();
-        for (E edge : topEdges) {
-            V vertex1 = edge.getVertex1();
-            V vertex2 = edge.getVertex2();
-            if (!visited.contains(vertex1) || !visited.contains(vertex2)) {
+//        IList<E> topEdges = Searcher.topKSort(this.edges.size(), this.edges);
+//        ISet<V> visited = new ChainedHashSet<>();
+//        for (E edge : topEdges) {
+//            V vertex1 = edge.getVertex1();
+//            V vertex2 = edge.getVertex2();
+//            if (!visited.contains(vertex1) || !visited.contains(vertex2)) {
+//                resultSet.add(edge);
+//            }
+//            visited.add(vertex1);
+//            visited.add(vertex2);
+//        }
+        
+        IPriorityQueue<E> edgeHeap = new ArrayHeap<>();
+        IDisjointSet<V> verticesSet = new ArrayDisjointSet<>();
+        
+        for (E edge : this.edges) {
+            edgeHeap.insert(edge);
+        }
+        for (V vertex : this.vertices) {
+            verticesSet.makeSet(vertex);
+        }
+        
+        int index = 0;
+        while (index < this.vertices.size() - 1) {
+            E edge = edgeHeap.removeMin();
+            V ver1 = edge.getVertex1();
+            V ver2 = edge.getVertex2();
+            if (verticesSet.findSet(ver1) != verticesSet.findSet(ver2)) {
+                verticesSet.union(ver1, ver2);
                 resultSet.add(edge);
+                index++;
             }
-            visited.add(vertex1);
-            visited.add(vertex2);
         }
         return resultSet;
     }
