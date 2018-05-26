@@ -62,7 +62,26 @@ public class ArrayDisjointSet<T> implements IDisjointSet<T> {
         if (this.isInSameSet(item1, item2)) {
             throw new IllegalArgumentException("in the same set");
         }
-        
+        // get the index from data of item1 and item2; then check in the pointers;
+        // returns neg number; (rank * -1) -1
+        int index1 = this.data.get(item1);
+        int index2 = this.data.get(item2);
+        boolean found = false;
+        while (!found) {
+            if (index1 >= 0) {
+                index1 = this.pointers[index1];
+            }
+            if (index2 >= 0) {
+                index2 = this.pointers[index2];
+            }
+            found = index1 < 0 && index2 < 0;
+        }
+        if (index1 > index2) {
+            index2 = index1;
+        } else {
+            index1 = index2;
+        }
+        index
     }
     
     private boolean isInSameSet(T item1, T item2) {
