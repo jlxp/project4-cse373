@@ -1,8 +1,13 @@
 package misc.graphs;
 
+import datastructures.concrete.ArrayDisjointSet;
+import datastructures.concrete.ChainedHashSet;
 import datastructures.concrete.DoubleLinkedList;
+import datastructures.concrete.dictionaries.ChainedHashDictionary;
+import datastructures.interfaces.IDictionary;
 import datastructures.interfaces.IList;
 import datastructures.interfaces.ISet;
+import misc.Searcher;
 import misc.exceptions.NoPathExistsException;
 import misc.exceptions.NotYetImplementedException;
 
@@ -51,7 +56,9 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
     //
     // Working with generics is really not the focus of this class, so if you
     // get stuck, let us know we'll try and help you get unstuck as best as we can.
-
+    private IDictionary<V, E> graph;
+    private IList<V> vertices; 
+    private IList<E> edges;
     /**
      * Constructs a new graph based on the given vertices and edges.
      *
@@ -60,7 +67,24 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
      *                                   present in the 'vertices' list
      */
     public Graph(IList<V> vertices, IList<E> edges) {
-        // TODO: Your code here
+        this.graph = new ChainedHashDictionary<>();
+        this.vertices = vertices; 
+        this.edges = edges;
+        for (V vertex : vertices) {
+            for (E edge : edges) {
+                if (edge.getWeight() < 0.0) {
+                    throw new IllegalArgumentException("edge is negative");
+                }
+                V edgeVertex1 = edge.getVertex1();
+                V edgeVertex2 = edge.getVertex2();
+                if (!vertices.contains(edgeVertex1) || !vertices.contains(edgeVertex2)) {
+                    throw new IllegalArgumentException("edge is not valid");
+                }
+                if(vertex.equals(edgeVertex1) || vertex.equals(edgeVertex2)) {
+                    this.graph.put(vertex, edge);
+                }
+            }
+        }
     }
 
     /**
@@ -87,14 +111,14 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
      * Returns the number of vertices contained within this graph.
      */
     public int numVertices() {
-        throw new NotYetImplementedException();
+        return this.vertices.size();
     }
 
     /**
      * Returns the number of edges contained within this graph.
      */
     public int numEdges() {
-        throw new NotYetImplementedException();
+        return this.edges.size();
     }
 
     /**
@@ -106,7 +130,19 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
      * Precondition: the graph does not contain any unconnected components.
      */
     public ISet<E> findMinimumSpanningTree() {
-        throw new NotYetImplementedException();
+        ISet<E> resultSet = new ChainedHashSet<>();
+        IList<E> topEdges = Searcher.topKSort(this.edges.size(), this.edges);
+        ISet<V> visited = new ChainedHashSet<>();
+        for (E edge : topEdges) {
+            V vertex1 = edge.getVertex1();
+            V vertex2 = edge.getVertex2();
+            if (!visited.contains(vertex1) || !visited.contains(vertex2)) {
+                resultSet.add(edge);
+            }
+            visited.add(vertex1);
+            visited.add(vertex2);
+        }
+        return resultSet;
     }
 
     /**
@@ -124,4 +160,38 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
     public IList<E> findShortestPathBetween(V start, V end) {
         throw new NotYetImplementedException();
     }
+    
+//    private static class GraphEdge<V> implements Edge<V>, Comparable<Edge<V>> {
+//        private V vertex1;
+//        private V vertex2;
+//        private double weight;
+//        
+//        
+//        public GraphEdge(V vertex1, V vertex2, double weight) {
+//            this.vertex1 = vertex1;
+//            this.vertex2 = vertex2;
+//            this.weight = weight;
+//        }
+//        
+//        @Override
+//        public V getVertex1() {
+//            return this.vertex1;
+//        }
+//
+//        @Override
+//        public V getVertex2() {
+//            return this.vertex2;
+//        }
+//
+//        @Override
+//        public double getWeight() {
+//            return weight; 
+//        }
+//
+//        @Override
+//        public int compareTo(Edge<V> o) {
+//            return Double.compare(this.weight, o.getWeight());
+//        }
+//        
+//    }
 }
