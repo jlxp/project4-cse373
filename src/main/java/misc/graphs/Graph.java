@@ -1,5 +1,7 @@
 package misc.graphs;
 
+import javax.print.attribute.standard.MediaSize.Other;
+
 import datastructures.concrete.ArrayDisjointSet;
 import datastructures.concrete.ArrayHeap;
 import datastructures.concrete.ChainedHashSet;
@@ -59,7 +61,7 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
     //
     // Working with generics is really not the focus of this class, so if you
     // get stuck, let us know we'll try and help you get unstuck as best as we can.
-    private IDictionary<V, E> graph;
+    private IDictionary<V, ISet<E>> graph;
     private IList<V> vertices; 
     private IList<E> edges;
     /**
@@ -74,6 +76,7 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
         this.vertices = vertices; 
         this.edges = edges;
         for (V vertex : vertices) {
+            this.graph.put(vertex, new ChainedHashSet<E>());
             for (E edge : edges) {
                 if (edge.getWeight() < 0.0) {
                     throw new IllegalArgumentException("edge is negative");
@@ -84,7 +87,7 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
                     throw new IllegalArgumentException("edge is not valid");
                 }
                 if(vertex.equals(edgeVertex1) || vertex.equals(edgeVertex2)) {
-                    this.graph.put(vertex, edge);
+                    this.graph.get(vertex).add(edge);
                 }
             }
         }
@@ -183,7 +186,99 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
      * @throws NoPathExistsException  if there does not exist a path from the start to the end
      */
     public IList<E> findShortestPathBetween(V start, V end) {
-        throw new NotYetImplementedException();
+        // first init vertex's weight as infinities and source weight = 0
+        // vertices = unprocessed
+        // source == priority 0
+        
+//        ISet<PseudoVertex<V>> pseudovertices = new ChainedHashSet<>();
+//        PseudoVertex<V> init = new PseudoVertex<V>(start, 0); 
+//        pseudovertices.add(init);  
+        
+        IList<E> result = new DoubleLinkedList<>();
+        
+        IDictionary<V, Double> vertexDist = new ChainedHashDictionary<>();
+        
+        
+        for (V vertex : this.vertices) {
+            // pseudovertices.add(new PseudoVertex<V>(vertex));
+            if(!vertex.equals(start)) {
+                vertexDist.put(vertex, Double.POSITIVE_INFINITY);
+            }
+        }
+        
+        vertexDist.put(start, 0.0);
+        
+        ISet<V> processed = new ChainedHashSet<>();
+        
+        IPriorityQueue<PseudoVertex<V>> vertexHeap = new ArrayHeap<>();
+        
+        vertexHeap.insert(new PseudoVertex<V>(start, 0.0));
+        
+        while (!vertexHeap.isEmpty()) {
+            PseudoVertex<V> currentVer = vertexHeap.removeMin();
+            V current = currentVer.getVertex();
+            double currentDist = currentVer.getDistance();
+            for (E edge : this.graph.get(current)) {
+                // if the other vertex is not processed
+                V other;
+                if (current.equals(edge.getVertex1())) {
+                    other = edge.getVertex2(); 
+                } else {
+                    other = edge.getVertex1();
+                }
+                double distance = vertexDist.get(other);
+                double newDistance = currentDist + edge.getWeight();
+                if (newDistance < distance) {
+                    vertexHeap.insert(new PseudoVertex<V>(other, newDistance));
+                    // decrease Priority problem
+                }
+                vertexDist.put(other, newDistance);
+                // predecessor problem
+            }
+            // stop at vertex end
+            processed.add(current);
+        }
+        // traverse from end to start and return the result list
+        return result; 
+        
+    }
+    
+    private class PseudoVertex<V> implements Comparable<PseudoVertex<V>> {
+        private V vertex;
+        private double distance;
+        
+        public PseudoVertex(V vertex) {
+            this(vertex, Double.POSITIVE_INFINITY);            
+        }
+        
+        public PseudoVertex(V vertex, double distance) {
+            this.vertex = vertex;
+            this.distance = distance; 
+        }
+        
+        public V getVertex() {
+            return this.vertex;
+        }
+        
+        public double getDistance(V vertex) {
+            return this.distance; 
+        }
+        
+        public double getDistance() {
+            return this.distance;
+        }
+        
+        public void setDistance(double distance) {
+            this.distance = distance; 
+        }
+
+        @Override
+        public int compareTo(PseudoVertex<V> o) {
+            return Double.compare(this.distance, o.getDistance());
+        }
+
+        
+
     }
     
 //    private static class GraphEdge<V> implements Edge<V>, Comparable<Edge<V>> {
