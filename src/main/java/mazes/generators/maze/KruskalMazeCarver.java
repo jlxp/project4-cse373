@@ -73,9 +73,9 @@ public class KruskalMazeCarver implements MazeCarver {
             Wall wall = walls.removeMin();
             Room room1 = wall.getRoom1();
             Room room2 = wall.getRoom2();
-            if (rooms.findSet(room1) != rooms.findSet(room2)) {
+            if (room2 != null && rooms.findSet(room1) != rooms.findSet(room2)) {
                 rooms.union(room1, room2);
-                toRemoved.add(new Wall(room1, room2, wall.getDividingLine()));
+                toRemoved.add(wall);//(new Wall(room1, room2, wall.getDividingLine()));
                 index++;
             }
             

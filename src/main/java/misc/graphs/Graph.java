@@ -197,25 +197,21 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
 //        pseudovertices.add(init);  
         
         IList<E> result = new DoubleLinkedList<>();
-//        
-        IDictionary<V, PseudoVertex<V>> pseudovertices = new ChainedHashDictionary<>();
-        
-         
-        
+        IDictionary<V, PseudoVertex<V, E>> pseudovertices = new ChainedHashDictionary<>();
         for (V vertex : this.vertices) {
-                pseudovertices.put(vertex, new PseudoVertex<V>(vertex));
+                pseudovertices.put(vertex, new PseudoVertex<V, E>(vertex));
         }
 
-        pseudovertices.put(start, new PseudoVertex<V>(start, 0.0));
+        pseudovertices.put(start, new PseudoVertex<V, E>(start, 0.0));
        
-        ISet<PseudoVertex<V>> processed = new ChainedHashSet<>();
+        ISet<PseudoVertex<V, E>> processed = new ChainedHashSet<>();
         
-        IPriorityQueue<PseudoVertex<V>> vertexHeap = new ArrayHeap<>();
+        IPriorityQueue<PseudoVertex<V, E>> vertexHeap = new ArrayHeap<>();
         
         vertexHeap.insert(pseudovertices.get(start));
 
         while(!vertexHeap.isEmpty()) {
-            PseudoVertex<V> currentVer = vertexHeap.removeMin();
+            PseudoVertex<V, E> currentVer = vertexHeap.removeMin();
             V current = currentVer.getVertex();
             double currentDist = currentVer.getDistance();
             ISet<E> currentEdges = this.graph.get(current);
@@ -228,7 +224,7 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
                 }
               
                 if (!processed.contains(pseudovertices.get(other))) { // processed vertex is skipped!
-                    PseudoVertex<V> otherpseudo = pseudovertices.get(other);
+                    PseudoVertex<V, E> otherpseudo = pseudovertices.get(other);
                     
                     double distance = otherpseudo.getDistance();
                     
@@ -246,14 +242,14 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
             processed.add(currentVer);
         }
 
-        Stack<PseudoVertex<V>> tempStack = new Stack<>();
+        Stack<PseudoVertex<V, E>> tempStack = new Stack<>();
         V currentVertex = end; 
         while(!currentVertex.equals(start)) { // we are backtracking from the end, using precedecessor
-            PseudoVertex<V> current = pseudovertices.get(currentVertex);
-            tempStack.push(current);
+            PseudoVertex<V, E> current = pseudovertices.get(currentVertex);
             if (current.getEdge() == null || tempStack.contains(current)) {
                 throw new NoPathExistsException("no path from start to end");
             }
+            tempStack.push(current); // bug?? was before if statement
             currentVertex = current.callPredecessor();             
         }
         
@@ -265,7 +261,7 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
         
     }
     
-    private class PseudoVertex<V> implements Comparable<PseudoVertex<V>> {
+    private static class PseudoVertex<V, E extends Edge<V>> implements Comparable<PseudoVertex<V, E>> {
         private V vertex;
         private E edge; // edge coming to this vertex
         private double distance;
@@ -289,7 +285,7 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
         }
         
         public V callPredecessor() {
-            return this.edge.getOtherVertex(this.vertex);      
+            return this.edge.getOtherVertex(this.vertex);
         }
         
         public E getEdge() {
@@ -300,17 +296,13 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
             return this.vertex;
         }
         
-        public double getDistance(V vertex) {
-            return this.distance; 
-        }
-        
         public double getDistance() {
             return this.distance;
         }
         
 
         @Override
-        public int compareTo(PseudoVertex<V> o) {
+        public int compareTo(PseudoVertex<V, E> o) {
             return Double.compare(this.distance, o.getDistance());
         }
 
