@@ -1,5 +1,7 @@
 package misc.graphs;
 
+import java.util.Stack;
+
 import javax.print.attribute.standard.MediaSize.Other;
 
 import datastructures.concrete.ArrayDisjointSet;
@@ -195,56 +197,77 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
 //        pseudovertices.add(init);  
         
         IList<E> result = new DoubleLinkedList<>();
+//        
+        IDictionary<V, PseudoVertex<V>> pseudovertices = new ChainedHashDictionary<>();
         
-        IDictionary<V, Double> vertexDist = new ChainedHashDictionary<>();
-        
+         
         
         for (V vertex : this.vertices) {
-            // pseudovertices.add(new PseudoVertex<V>(vertex));
-            if(!vertex.equals(start)) {
-                vertexDist.put(vertex, Double.POSITIVE_INFINITY);
-            }
+                pseudovertices.put(vertex, new PseudoVertex<V>(vertex));
         }
-        
-        vertexDist.put(start, 0.0);
-        
-        ISet<V> processed = new ChainedHashSet<>();
+
+        pseudovertices.put(start, new PseudoVertex<V>(start, 0.0));
+       
+        ISet<PseudoVertex<V>> processed = new ChainedHashSet<>();
         
         IPriorityQueue<PseudoVertex<V>> vertexHeap = new ArrayHeap<>();
         
-        vertexHeap.insert(new PseudoVertex<V>(start, 0.0));
-        
-        while (!vertexHeap.isEmpty()) {
+        vertexHeap.insert(pseudovertices.get(start));
+
+        while(!vertexHeap.isEmpty()) {
             PseudoVertex<V> currentVer = vertexHeap.removeMin();
             V current = currentVer.getVertex();
             double currentDist = currentVer.getDistance();
-            for (E edge : this.graph.get(current)) {
-                // if the other vertex is not processed
+            ISet<E> currentEdges = this.graph.get(current);
+            for (E edge : currentEdges) { // pick the edge attached to the current
                 V other;
                 if (current.equals(edge.getVertex1())) {
                     other = edge.getVertex2(); 
                 } else {
                     other = edge.getVertex1();
                 }
-                double distance = vertexDist.get(other);
-                double newDistance = currentDist + edge.getWeight();
-                if (newDistance < distance) {
-                    vertexHeap.insert(new PseudoVertex<V>(other, newDistance));
-                    // decrease Priority problem
+              
+                if (!processed.contains(pseudovertices.get(other))) { // processed vertex is skipped!
+                    PseudoVertex<V> otherpseudo = pseudovertices.get(other);
+                    
+                    double distance = otherpseudo.getDistance();
+                    
+                    double newDistance = currentDist + edge.getWeight();
+                    
+                    if (newDistance < distance) {
+                        otherpseudo.setDistance(newDistance);
+                        otherpseudo.setEdge(edge); // not only setting edge, but implicitly storing predecessor
+                        vertexHeap.insert(otherpseudo);
+                        // decrease Priority problem is solved by creating class of pseudovertex 
+                    }                
+                    pseudovertices.put(other, otherpseudo); // update the pseudovertices (distance and predecessor)   
                 }
-                vertexDist.put(other, newDistance);
-                // predecessor problem
             }
-            // stop at vertex end
-            processed.add(current);
+            processed.add(currentVer);
         }
-        // traverse from end to start and return the result list
+
+        Stack<PseudoVertex<V>> tempStack = new Stack<>();
+        V currentVertex = end; 
+        while(!currentVertex.equals(start)) { // we are backtracking from the end, using precedecessor
+            PseudoVertex<V> current = pseudovertices.get(currentVertex);
+            tempStack.push(current);
+            if (current.getEdge() == null || tempStack.contains(current)) {
+                throw new NoPathExistsException("no path from start to end");
+            }
+            currentVertex = current.callPredecessor();             
+        }
+        
+        while(!tempStack.isEmpty()) { // classic 143 stack-queue transfer
+            result.add((E) tempStack.pop().getEdge()); // this is possible as edge of pseudovertex is from its predecessor to current
+        }
+        
         return result; 
         
     }
     
     private class PseudoVertex<V> implements Comparable<PseudoVertex<V>> {
         private V vertex;
+        private E edge; // edge coming to this vertex
         private double distance;
         
         public PseudoVertex(V vertex) {
@@ -254,6 +277,23 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
         public PseudoVertex(V vertex, double distance) {
             this.vertex = vertex;
             this.distance = distance; 
+            this.edge = null;       
+        }
+        
+        public void setEdge(E edge) {
+            this.edge = edge;
+        }
+
+        public void setDistance(double distance) {
+            this.distance = distance; 
+        }
+        
+        public V callPredecessor() {
+            return this.edge.getOtherVertex(this.vertex);      
+        }
+        
+        public E getEdge() {
+            return this.edge;
         }
         
         public V getVertex() {
@@ -268,16 +308,11 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
             return this.distance;
         }
         
-        public void setDistance(double distance) {
-            this.distance = distance; 
-        }
 
         @Override
         public int compareTo(PseudoVertex<V> o) {
             return Double.compare(this.distance, o.getDistance());
         }
-
-        
 
     }
     
