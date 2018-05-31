@@ -5,6 +5,7 @@ import datastructures.concrete.ArrayDisjointSet;
 import datastructures.concrete.ArrayHeap;
 import datastructures.concrete.ChainedHashSet;
 import datastructures.concrete.DoubleLinkedList;
+import datastructures.concrete.KVPair;
 import datastructures.concrete.dictionaries.ChainedHashDictionary;
 import datastructures.interfaces.IDictionary;
 import datastructures.interfaces.IDisjointSet;
@@ -174,7 +175,10 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
     public IList<E> findShortestPathBetween(V start, V end) {
         IList<E> result = new DoubleLinkedList<>();
         IDictionary<V, PseudoVertex<V, E>> pseudovertices = new ChainedHashDictionary<>();
-        for (V vertex : this.vertices) {
+        IDisjointSet<V> connected = new ArrayDisjointSet<>();
+        connected.makeSet(start);
+        
+        for (V vertex : this.vertices) {            
             pseudovertices.put(vertex, new PseudoVertex<V, E>(vertex));
         }
 
@@ -192,12 +196,7 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
             double currentDist = currentVer.getDistance();
             ISet<E> currentEdges = this.graph.get(current);
             for (E edge : currentEdges) { // pick the edge attached to the current
-                V other;
-                if (current.equals(edge.getVertex1())) {
-                    other = edge.getVertex2();
-                } else {
-                    other = edge.getVertex1();
-                }
+                V other = edge.getOtherVertex(current);
               
                 if (!processed.contains(pseudovertices.get(other))) { // processed vertex is skipped!
                     PseudoVertex<V, E> otherpseudo = pseudovertices.get(other);
@@ -211,24 +210,33 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
                         otherpseudo.setEdge(edge); // not only setting edge, but implicitly storing predecessor
                         vertexHeap.insert(otherpseudo);
                         // decrease Priority problem is solved by creating class of pseudovertex 
-                    }                
-                    pseudovertices.put(other, otherpseudo); // update the pseudovertices (distance and predecessor)   
+                        pseudovertices.put(other, otherpseudo); // update the pseudovertices (distance and predecessor)   
+                    }                                 
                 }
             }
             processed.add(currentVer);
         }
-
-        Stack<PseudoVertex<V, E>> tempStack = new Stack<>();
+        
         V currentVertex = end;
         while (!currentVertex.equals(start)) { // we are backtracking from the end, using predecessor
             PseudoVertex<V, E> current = pseudovertices.get(currentVertex);
-            if (current.getEdge() == null || tempStack.contains(current)) {
+            if (current.getEdge() == null) {
                 throw new NoPathExistsException("no path from start to end");
             }
-            tempStack.push(current);
             result.insert(0, (E) current.getEdge());
             currentVertex = current.callPredecessor();
         }
+//        Stack<PseudoVertex<V, E>> tempStack = new Stack<>();
+//        V currentVertex = end;
+//        while (!currentVertex.equals(start)) { // we are backtracking from the end, using predecessor
+//            PseudoVertex<V, E> current = pseudovertices.get(currentVertex);
+//            if (current.getEdge() == null || tempStack.contains(current)) {
+//                throw new NoPathExistsException("no path from start to end");
+//            }
+//            tempStack.push(current);
+//            result.insert(0, (E) current.getEdge());
+//            currentVertex = current.callPredecessor();
+//        }
         
 //        while (!tempStack.isEmpty()) {
 //            result.add((E) tempStack.pop().getEdge());
