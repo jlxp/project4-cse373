@@ -3,7 +3,7 @@ package datastructures.concrete;
 import datastructures.concrete.dictionaries.ChainedHashDictionary;
 import datastructures.interfaces.IDictionary;
 import datastructures.interfaces.IDisjointSet;
-import misc.exceptions.NotYetImplementedException;
+// import misc.exceptions.NotYetImplementedException;
 
 /**
  * See IDisjointSet for more details.
@@ -74,20 +74,15 @@ public class ArrayDisjointSet<T> implements IDisjointSet<T> {
         if (index1 == index2) {
             throw new IllegalArgumentException("in the same set");
         }
-        // get the index from data of item1 and item2; then check in the pointers;
-        // returns neg number; (rank * -1) -1
-        
         int rank1 = this.pointers[index1];
         int rank2 = this.pointers[index2];
-        if (rank2 < rank1) { // rank2 is actually larger than rank1!!!!!!!
+        if (rank2 < rank1) { // rank2 is actually larger than rank1!
             this.pointers[index1] = index2;
-            
         } else if (rank2 > rank1){
             this.pointers[index2] = index1;
         } else {
             this.pointers[index2] = index1;
             this.pointers[index1]--;
         }
-                
     }
 }
