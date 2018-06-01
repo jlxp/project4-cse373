@@ -1,11 +1,9 @@
 package misc.graphs;
 
-import java.util.Stack;
 import datastructures.concrete.ArrayDisjointSet;
 import datastructures.concrete.ArrayHeap;
 import datastructures.concrete.ChainedHashSet;
 import datastructures.concrete.DoubleLinkedList;
-import datastructures.concrete.KVPair;
 import datastructures.concrete.dictionaries.ChainedHashDictionary;
 import datastructures.interfaces.IDictionary;
 import datastructures.interfaces.IDisjointSet;
@@ -234,23 +232,6 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
             result.insert(0, (E) current.getEdge());
             currentVertex = current.callPredecessor(); // predecessor is the same vertex after a while...
         }
-//        Stack<PseudoVertex<V, E>> tempStack = new Stack<>();
-//        V currentVertex = end;
-//        while (!currentVertex.equals(start)) { // we are backtracking from the end, using predecessor
-//            PseudoVertex<V, E> current = pseudovertices.get(currentVertex);
-//            if (current.getEdge() == null || tempStack.contains(current)) {
-//                throw new NoPathExistsException("no path from start to end");
-//            }
-//            tempStack.push(current);
-//            result.insert(0, (E) current.getEdge());
-//            currentVertex = current.callPredecessor();
-//        }
-        
-//        while (!tempStack.isEmpty()) {
-//            result.add((E) tempStack.pop().getEdge());
-//            // this is possible as edge of pseudovertex is from its predecessor to current
-//        }
-        
         return result;
     }
     
