@@ -5,6 +5,7 @@ import datastructures.concrete.ArrayDisjointSet;
 import datastructures.concrete.ArrayHeap;
 import datastructures.concrete.ChainedHashSet;
 import datastructures.concrete.DoubleLinkedList;
+import datastructures.concrete.KVPair;
 import datastructures.concrete.dictionaries.ChainedHashDictionary;
 import datastructures.interfaces.IDictionary;
 import datastructures.interfaces.IDisjointSet;
@@ -201,13 +202,7 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
                 break;
             }
             for (E edge : mst) { // pick the edge attached to the current
-                V other;
-                if (current.equals(edge.getVertex1())) { // picks the edge that is not current
-                    other = edge.getVertex2();
-                } else {
-                    other = edge.getVertex1();
-                }
-                
+                V other = edge.getOtherVertex(current);
                 if (!processed.contains(pseudovertices.get(other))) { // processed vertex is skipped!
                     PseudoVertex<V, E> otherpseudo = pseudovertices.get(other);
                     double distance = otherpseudo.getDistance();
@@ -225,21 +220,33 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
             }
             processed.add(currentVer);
         }
-
-        Stack<PseudoVertex<V, E>> tempStack = new Stack<>();
+        
         V currentVertex = end;
         while (!currentVertex.equals(start)) { // we are backtracking from the end, using predecessor
             PseudoVertex<V, E> current = pseudovertices.get(currentVertex);
-            if (current.getEdge() == null || 
-                    tempStack.contains(current)) { // cause predecessor is the same vertex sometimes this
-                // ends up getting us into this exception
-                // if I remove the stack entirely and do not use it then we timeout cause infinite loop
+            if (current.getEdge() == null) {
                 throw new NoPathExistsException("no path from start to end");
             }
-            tempStack.add(current);
             result.insert(0, (E) current.getEdge());
             currentVertex = current.callPredecessor(); // predecessor is the same vertex after a while...
         }
+//        Stack<PseudoVertex<V, E>> tempStack = new Stack<>();
+//        V currentVertex = end;
+//        while (!currentVertex.equals(start)) { // we are backtracking from the end, using predecessor
+//            PseudoVertex<V, E> current = pseudovertices.get(currentVertex);
+//            if (current.getEdge() == null || tempStack.contains(current)) {
+//                throw new NoPathExistsException("no path from start to end");
+//            }
+//            tempStack.push(current);
+//            result.insert(0, (E) current.getEdge());
+//            currentVertex = current.callPredecessor();
+//        }
+        
+//        while (!tempStack.isEmpty()) {
+//            result.add((E) tempStack.pop().getEdge());
+//            // this is possible as edge of pseudovertex is from its predecessor to current
+//        }
+        
         return result;
     }
     
