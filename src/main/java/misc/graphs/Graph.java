@@ -74,21 +74,25 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
         this.graph = new ChainedHashDictionary<>();
         this.vertices = vertices;
         this.edges = edges;
-        for (V vertex : vertices) {
-            this.graph.put(vertex, new ChainedHashSet<E>());
-            for (E edge : edges) {
-                if (edge.getWeight() < 0.0) {
-                    throw new IllegalArgumentException("edge is negative");
-                }
-                V edgeVertex1 = edge.getVertex1();
-                V edgeVertex2 = edge.getVertex2();
-                if (!vertices.contains(edgeVertex1) || !vertices.contains(edgeVertex2)) {
-                    throw new IllegalArgumentException("edge is not valid");
-                }
-                if (vertex.equals(edgeVertex1) || vertex.equals(edgeVertex2)) {
-                    this.graph.get(vertex).add(edge);
-                }
+
+        for (E edge : edges) { // NOW IT'S O(E) instead of O(VE)!!!!!!
+            if (edge.getWeight() < 0.0) {
+                throw new IllegalArgumentException("edge is negative");
             }
+            V edgeVertex1 = edge.getVertex1();
+            V edgeVertex2 = edge.getVertex2();
+            if (!vertices.contains(edgeVertex1) || !vertices.contains(edgeVertex2)) {
+                throw new IllegalArgumentException("edge is not valid");
+            }
+            
+            if (!this.graph.containsKey(edgeVertex1)) {
+                this.graph.put(edgeVertex1, new ChainedHashSet<>());
+            } 
+            if (!this.graph.containsKey(edgeVertex2)) {
+                this.graph.put(edgeVertex2, new ChainedHashSet<>());
+            } 
+            this.graph.get(edgeVertex1).add(edge);
+            this.graph.get(edgeVertex2).add(edge);  // since this graph is undirected!!          
         }
     }
 
@@ -173,7 +177,6 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
      * @throws NoPathExistsException  if there does not exist a path from the start to the end
      */
     public IList<E> findShortestPathBetween(V start, V end) {
-        ISet<E> mst = this.findMinimumSpanningTree();
         
         IList<E> result = new DoubleLinkedList<>();
         
@@ -192,19 +195,18 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
         IPriorityQueue<PseudoVertex<V, E>> vertexHeap = new ArrayHeap<>();
         
         vertexHeap.insert(pseudovertices.get(start));
-        
+
         while (!vertexHeap.isEmpty()) {
             PseudoVertex<V, E> currentVer = vertexHeap.removeMin();
             V current = currentVer.getVertex(); // gets current vertex
             double currentDist = currentVer.getDistance();
-            if (current.equals(end)) {
-                System.out.println("In!");
-                break;
-            }
-            for (E edge : mst) { // pick the edge attached to the current
+            ISet<E> currentEdges = this.graph.get(current);
+
+            for (E edge : currentEdges) { // pick the edge attached to the current
                 V other = edge.getOtherVertex(current);
                 if (!processed.contains(pseudovertices.get(other))) { // processed vertex is skipped!
                     PseudoVertex<V, E> otherpseudo = pseudovertices.get(other);
+
                     double distance = otherpseudo.getDistance();
                     
                     double newDistance = currentDist + edge.getWeight();
@@ -213,9 +215,10 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
                         otherpseudo.setDistance(newDistance);
                         otherpseudo.setEdge(edge); // not only setting edge, but implicitly storing predecessor
                         vertexHeap.insert(otherpseudo);
+                        pseudovertices.put(other, otherpseudo); // update the pseudovertices (distance and predecessor)
                         // decrease Priority problem is solved by creating class of pseudovertex 
                     }
-                    pseudovertices.put(other, otherpseudo); // update the pseudovertices (distance and predecessor)
+                    
                 }
             }
             processed.add(currentVer);
@@ -224,7 +227,8 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
         V currentVertex = end;
         while (!currentVertex.equals(start)) { // we are backtracking from the end, using predecessor
             PseudoVertex<V, E> current = pseudovertices.get(currentVertex);
-            if (current.getEdge() == null) {
+            if (current.getEdge() == null) { 
+                // this also handles the cycle without the end/start since the choice of implementation
                 throw new NoPathExistsException("no path from start to end");
             }
             result.insert(0, (E) current.getEdge());
