@@ -286,7 +286,7 @@ public class TestGraph extends BaseTest {
         checkPathMatches(graph, 12, new String[] {"f", "d", "a", "c"});
     }
 
-    @Test//(timeout=SECOND)
+    @Test(timeout=SECOND)
     public void testFindingShortestPathComplex() {
         Graph<String, SimpleEdge<String>> graph = this.buildComplexGraph();
 

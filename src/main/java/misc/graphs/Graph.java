@@ -172,36 +172,44 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
      * @throws NoPathExistsException  if there does not exist a path from the start to the end
      */
     public IList<E> findShortestPathBetween(V start, V end) {
+        ISet<E> mst = this.findMinimumSpanningTree();
+        
         IList<E> result = new DoubleLinkedList<>();
+        
         IDictionary<V, PseudoVertex<V, E>> pseudovertices = new ChainedHashDictionary<>();
+        
         for (V vertex : this.vertices) {
             pseudovertices.put(vertex, new PseudoVertex<V, E>(vertex));
+            // this already initializes all vertices to infinity
+            // see the PseudoVeretex class
         }
 
         pseudovertices.put(start, new PseudoVertex<V, E>(start, 0.0));
-       
+        
         ISet<PseudoVertex<V, E>> processed = new ChainedHashSet<>();
         
         IPriorityQueue<PseudoVertex<V, E>> vertexHeap = new ArrayHeap<>();
         
         vertexHeap.insert(pseudovertices.get(start));
-
+        
         while (!vertexHeap.isEmpty()) {
             PseudoVertex<V, E> currentVer = vertexHeap.removeMin();
-            V current = currentVer.getVertex();
+            V current = currentVer.getVertex(); // gets current vertex
             double currentDist = currentVer.getDistance();
-            ISet<E> currentEdges = this.graph.get(current);
-            for (E edge : currentEdges) { // pick the edge attached to the current
+            if (current.equals(end)) {
+                System.out.println("In!");
+                break;
+            }
+            for (E edge : mst) { // pick the edge attached to the current
                 V other;
-                if (current.equals(edge.getVertex1())) {
+                if (current.equals(edge.getVertex1())) { // picks the edge that is not current
                     other = edge.getVertex2();
                 } else {
                     other = edge.getVertex1();
                 }
-              
+                
                 if (!processed.contains(pseudovertices.get(other))) { // processed vertex is skipped!
                     PseudoVertex<V, E> otherpseudo = pseudovertices.get(other);
-                    
                     double distance = otherpseudo.getDistance();
                     
                     double newDistance = currentDist + edge.getWeight();
@@ -211,8 +219,8 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
                         otherpseudo.setEdge(edge); // not only setting edge, but implicitly storing predecessor
                         vertexHeap.insert(otherpseudo);
                         // decrease Priority problem is solved by creating class of pseudovertex 
-                    }                
-                    pseudovertices.put(other, otherpseudo); // update the pseudovertices (distance and predecessor)   
+                    }
+                    pseudovertices.put(other, otherpseudo); // update the pseudovertices (distance and predecessor)
                 }
             }
             processed.add(currentVer);
@@ -222,19 +230,16 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
         V currentVertex = end;
         while (!currentVertex.equals(start)) { // we are backtracking from the end, using predecessor
             PseudoVertex<V, E> current = pseudovertices.get(currentVertex);
-            if (current.getEdge() == null || tempStack.contains(current)) {
+            if (current.getEdge() == null || 
+                    tempStack.contains(current)) { // cause predecessor is the same vertex sometimes this
+                // ends up getting us into this exception
+                // if I remove the stack entirely and do not use it then we timeout cause infinite loop
                 throw new NoPathExistsException("no path from start to end");
             }
-            tempStack.push(current);
+            tempStack.add(current);
             result.insert(0, (E) current.getEdge());
-            currentVertex = current.callPredecessor();
+            currentVertex = current.callPredecessor(); // predecessor is the same vertex after a while...
         }
-        
-//        while (!tempStack.isEmpty()) {
-//            result.add((E) tempStack.pop().getEdge());
-//            // this is possible as edge of pseudovertex is from its predecessor to current
-//        }
-        
         return result;
     }
     
