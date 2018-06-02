@@ -20,9 +20,9 @@ public class ArrayDisjointSet<T> implements IDisjointSet<T> {
     // successfully implement this class.
 
     public ArrayDisjointSet() {
-        pointers = new int[INIT_LENGTH];
-        data = new ChainedHashDictionary<T, Integer>();
-        size = 0;
+        this.pointers = new int[INIT_LENGTH];
+        this.data = new ChainedHashDictionary<T, Integer>();
+        this.size = 0;
     }
 
     @Override

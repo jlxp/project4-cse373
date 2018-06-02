@@ -100,6 +100,124 @@ public class TestArrayDisjointSet extends BaseTest {
         }
     }
 
+    @Test(timeout=SECOND)
+    public void testUnion1() {
+        Integer[] items = new Integer[100];
+        for (int i = 0; i < items.length; i++) {
+            items[i] = i;
+        }
+        IDisjointSet<Integer> forest = this.createForest(items);
+
+        for (int i = 0; i < items.length - 1; i++) {
+            forest.union(i, i + 1);
+        }
+        
+        int id = forest.findSet(0);
+        
+        int[] expected = new int[100];
+        for (int i = 0; i < expected.length; i++) {
+            expected[i] = id;
+        }
+
+        for (int i = 0; i < 5; i++) {
+            check(forest, items, expected);
+        }
+    }
+    
+    @Test(timeout=10*SECOND)
+    public void testUnion2() {
+        int big = 1000000;
+        Integer[] items = new Integer[big];
+        for (int i = 0; i < items.length; i++) {
+            items[i] = i;
+        }
+        IDisjointSet<Integer> forest = this.createForest(items);
+
+        for (int i = 0; i < items.length - 1; i++) {
+            forest.union(i, i + 1);
+        }
+        
+        int id = forest.findSet(0);
+        
+        int[] expected = new int[big];
+        for (int i = 0; i < expected.length; i++) {
+            expected[i] = id;
+        }
+
+        check(forest, items, expected);
+        assertTrue(forest.findSet(0) == forest.findSet(big - 1));
+        assertTrue(forest.findSet(10) == 0);
+    }
+    
+    @Test(timeout=SECOND)
+    public void testSameSet() {
+        String[] items = new String[] {"a", "b", "c", "d", "e"};
+        IDisjointSet<String> forest = this.createForest(items);
+        
+
+        forest.union("a", "b");
+        
+        forest.union("c", "d");
+        
+        forest.union("b", "c");
+        
+        try {
+            forest.union("a", "d");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // nothing!
+        }
+    }
+    
+    @Test(timeout=SECOND)
+    public void testSesame() {
+        String[] items = new String[] {"a", "b", "c", "d", "e"};
+        IDisjointSet<String> forest = this.createForest(items);
+        
+        forest.union("a",  "b");
+        assertTrue(forest.findSet("c") == 2);
+        assertTrue(forest.findSet("b") == forest.findSet("a"));
+        
+        forest.union("a", "c");
+
+        assertTrue(forest.findSet("c") == 0);
+        
+        forest.union("d", "e");
+        
+        forest.union("c", "d");
+        
+        assertTrue(forest.findSet("b") == forest.findSet("d"));
+        
+        
+    }
+    
+    @Test(timeout=SECOND)
+    public void testSesame2() {
+        String[] items = new String[] {};
+        IDisjointSet<String> forest = this.createForest(items);
+        
+        try {
+            forest.findSet("a");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // nothing!
+        }                            
+    }
+    
+    @Test(timeout=SECOND)
+    public void testSesame3() {
+        String[] items = new String[] {null, "a", "b"};
+        IDisjointSet<String> forest = this.createForest(items);
+        
+        forest.union(null, "a");
+        
+        assertTrue(forest.findSet(null) == forest.findSet("a"));
+        
+        forest.union("b", null);
+        
+        assertTrue(forest.findSet("b") == forest.findSet("a"));
+    }
+    
     @Test(timeout=4 * SECOND)
     public void testLargeForest() {
         IDisjointSet<Integer> forest = new ArrayDisjointSet<>();
