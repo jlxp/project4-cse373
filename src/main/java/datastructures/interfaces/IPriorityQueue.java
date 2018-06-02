@@ -1,7 +1,6 @@
 package datastructures.interfaces;
 
 import misc.exceptions.EmptyContainerException;
-import java.util.NoSuchElementException;
 
 /**
  * Represents a queue where the elements are ordered such that the
